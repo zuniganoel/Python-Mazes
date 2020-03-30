@@ -8,6 +8,11 @@ class Maze():
         self.start = None
         self.end = None
 
+    def generate(self):
+        print('Generating random maze')
+
+    def solve(self, algorithm):
+        print(f'Solving through {algorithm}')
 
 class MazeGUI():
     def __init__(self, parent):
@@ -47,10 +52,16 @@ class MazeGUI():
 
         self.draw_menu = tk.Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label='Draw', menu=self.draw_menu)
-
         self.draw_menu.add_command(label='Walls', command=lambda: self.switch_mode('walls'))
         self.draw_menu.add_command(label='Start', command=lambda: self.switch_mode('start'))
         self.draw_menu.add_command(label='End', command=lambda: self.switch_mode('end'))
+
+        self.menubar.add_command(label='Generate', command=self.Maze.generate)
+
+        self.solve_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label='Solve Maze', menu=self.solve_menu)
+        self.solve_menu.add_command(label='A*', command=lambda: self.Maze.solve('a*'))
+
         self.menubar.add_command(label='Exit', command=parent.quit)
 
         parent.config(menu=self.menubar)
