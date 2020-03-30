@@ -5,6 +5,8 @@ from tkinter import ttk
 class Maze():
     def __init__(self):
         self.walls = {}
+        self.start = None
+        self.end = None
 
 
 class MazeGUI():
@@ -15,6 +17,7 @@ class MazeGUI():
         self.screen_height = self.parent.winfo_screenheight()
 
         self.Maze = Maze()
+        self.mode = 'walls'
         self.grid = []
 
         self.grid_color = self.rgb_to_hex(255, 255, 0)
@@ -39,9 +42,20 @@ class MazeGUI():
         self.grid_menu.add_command(label='Toggle', command=self.toggle_grid)
 
         self.menubar.add_command(label='Colors', command=self.colors_popup)
+
+        self.draw_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label='Draw', menu=self.draw_menu)
+
+        self.draw_menu.add_command(label='Walls', command=lambda: self.switch_mode('walls'))
+        self.draw_menu.add_command(label='Start', command=lambda: self.switch_mode('start'))
+        self.draw_menu.add_command(label='End', command=lambda: self.switch_mode('end'))
         self.menubar.add_command(label='Exit', command=parent.quit)
 
         parent.config(menu=self.menubar)
+
+
+    def switch_mode(self, mode):
+        self.mode = mode
 
 
     def size_setup(self, grid_size = 25, cell_size = None):
@@ -289,16 +303,40 @@ class MazeGUI():
         start_x = event.x // self.cell_size * self.cell_size
         start_y = event.y // self.cell_size * self.cell_size
 
-        coords = start_x, start_y, start_x + self.cell_size, start_y + self.cell_size
+        mid_point = start_x + self.cell_size // 2, start_y + self.cell_size // 2
+        radius = self.cell_size // 4
 
-        if (event.num == 1 or 'Button1' in str(event)) and coords not in self.Maze.walls.keys():
-            if coords[0] >= 0 and coords[1] >= 0 and coords[2] <= self.window_size and coords[3] <= self.window_size: 
-                wall = self.canvas.create_rectangle(coords, fill=self.cell_color)
-                self.canvas.tag_lower(wall)    
-                self.Maze.walls[coords] = wall
+        if self.mode == 'walls':
+            coords = start_x, start_y, start_x + self.cell_size, start_y + self.cell_size
+            if (event.num == 1 or 'Button1' in str(event)) and coords not in self.Maze.walls.keys():
+                if coords[0] >= 0 and coords[1] >= 0 and coords[2] <= self.window_size and coords[3] <= self.window_size: 
+                    wall = self.canvas.create_rectangle(coords, fill=self.cell_color)
+                    self.canvas.tag_lower(wall)    
+                    self.Maze.walls[coords] = wall
 
-        elif (event.num == 3 or 'Button3' in str(event)) and coords in self.Maze.walls.keys():
-            self.canvas.delete(self.Maze.walls.pop(coords))
+            elif (event.num == 3 or 'Button3' in str(event)) and coords in self.Maze.walls.keys():
+                self.canvas.delete(self.Maze.walls.pop(coords))
+        elif self.mode == 'start':
+            coords = (mid_point[0] - radius, 
+                    mid_point[1] - radius, 
+                    mid_point[0] + radius, 
+                    mid_point[1] + radius)
+
+            if not self.Maze.start == None:
+                self.canvas.delete(self.Maze.start)
+            start = self.canvas.create_oval(coords, fill='green')
+            self.Maze.start = start
+
+        elif self.mode == 'end':
+            coords = (mid_point[0] - radius, 
+                    mid_point[1] - radius, 
+                    mid_point[0] + radius, 
+                    mid_point[1] + radius)
+
+            if not self.Maze.end == None:
+                self.canvas.delete(self.Maze.end)
+            end = self.canvas.create_oval(coords, fill='red')
+            self.Maze.end = end
 
 
 if __name__ == "__main__":
