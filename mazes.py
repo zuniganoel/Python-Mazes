@@ -35,6 +35,18 @@ class MazeGUI():
         self.size_setup()
         self.bind_events()
 
+    def move_start(self, event):
+        self.canvas.scan_mark(event.x, event.y)
+
+    def move_move(self, event):
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
+
+    def zoom(self, event):
+        if event.delta > 0:
+            self.canvas.scale('all', self.canvas.canvasx(event.x), self.canvas.canvasy(event.y), 1.1, 1.1)
+        elif event.delta < 0:
+            self.canvas.scale('all', event.x, event.y, 0.9, 0.9)
+        self.canvas.scan_dragto(event.x, event.y, gain=1)
 
     def gui_setup(self, parent):
         self.canvas = tk.Canvas(parent, bg=self.bg_color)
@@ -42,27 +54,40 @@ class MazeGUI():
 
         self.menubar = tk.Menu(parent)
 
-        self.grid_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label='Grid', menu=self.grid_menu)
+        self.file_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label='File', menu=self.file_menu)
+        self.file_menu.add_command(label='Save', command=None)
+        self.file_menu.add_command(label='Open', command=None)
+        self.file_menu.add_command(label='Exit', command=parent.quit)
 
-        self.grid_menu.add_command(label='Edit', command=self.grid_popup)
-        self.grid_menu.add_command(label='Toggle', command=self.toggle_grid)
+        self.edit_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label='Edit', menu=self.edit_menu)
 
-        self.menubar.add_command(label='Colors', command=self.colors_popup)
+        self.grid_menu = tk.Menu(self.edit_menu, tearoff=0)
+        self.edit_menu.add_cascade(label='Grid', menu=self.grid_menu)
+        self.grid_menu.add_command(label='Change Size', command=self.grid_popup)
+        self.grid_menu.add_command(label='Restore Default', command=None)
+        self.grid_menu.add_command(label='Toggle Visibility', command=self.toggle_grid)
 
-        self.draw_menu = tk.Menu(self.menubar, tearoff=0)
+        self.color_menu = tk.Menu(self.edit_menu, tearoff=0)
+        self.edit_menu.add_cascade(label='Colors', menu=self.color_menu)
+        self.color_menu.add_command(label='Customize', command=self.colors_popup)
+        self.color_menu.add_command(label='Restore Default', command=None)
+        self.edit_menu.add_command(label='Reset Zoom', command=None)
+
+        self.draw_menu = tk.Menu(self.edit_menu, tearoff=0)
         self.menubar.add_cascade(label='Draw', menu=self.draw_menu)
         self.draw_menu.add_command(label='Walls', command=lambda: self.switch_mode('walls'))
-        self.draw_menu.add_command(label='Start', command=lambda: self.switch_mode('start'))
-        self.draw_menu.add_command(label='End', command=lambda: self.switch_mode('end'))
+        self.draw_menu.add_command(label='Start Point', command=lambda: self.switch_mode('start'))
+        self.draw_menu.add_command(label='End Point', command=lambda: self.switch_mode('end'))
 
-        self.menubar.add_command(label='Generate', command=self.Maze.generate)
+        self.maze_menu = tk.Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label='Maze', menu=self.maze_menu)
+        self.maze_menu.add_command(label='Generate', command=self.Maze.generate)
 
-        self.solve_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label='Solve Maze', menu=self.solve_menu)
+        self.solve_menu = tk.Menu(self.maze_menu, tearoff=0)
+        self.maze_menu.add_cascade(label='Solve', menu=self.solve_menu)
         self.solve_menu.add_command(label='A*', command=lambda: self.Maze.solve('a*'))
-
-        self.menubar.add_command(label='Exit', command=parent.quit)
 
         parent.config(menu=self.menubar)
 
@@ -97,7 +122,7 @@ class MazeGUI():
 
 
     def draw_grid(self):
-        for i in range(0, self.window_size, self.cell_size):
+        for i in range(0, self.window_size + self.cell_size, self.cell_size):
             line_x = self.canvas.create_line(0, i, self.window_size, i, fill=self.grid_color)
             line_y = self.canvas.create_line(i, 0, i, self.window_size, fill=self.grid_color)
 
@@ -121,7 +146,10 @@ class MazeGUI():
     def bind_events(self):
         for event in ['<Button 1>', '<B1-Motion>', '<Button 3>', '<B3-Motion>']:
             self.canvas.bind(event, self.mouse_event)
-    
+        self.canvas.bind('<MouseWheel>', self.zoom)
+        self.canvas.bind('<Button 2>', self.move_start)
+        self.canvas.bind('<B2-Motion>', self.move_move)
+
 
     def close(self, event):
         if str(event.widget) == '.!toplevel':
@@ -420,6 +448,7 @@ class MazeGUI():
                 self.canvas.delete(self.Maze.end)
             end = self.canvas.create_oval(coords, fill=self.end_color)
             self.Maze.end = end
+
 
 
 if __name__ == "__main__":
