@@ -23,6 +23,8 @@ class MazeGUI():
         self.grid_color = self.rgb_to_hex(255, 255, 0)
         self.cell_color = self.rgb_to_hex(100, 0, 0)
         self.bg_color = self.rgb_to_hex(0, 0, 0)
+        self.start_color = self.rgb_to_hex(0, 255, 0)
+        self.end_color = self.rgb_to_hex(255, 0, 0)
 
         self.gui_setup(self.parent)
         self.size_setup()
@@ -204,7 +206,6 @@ class MazeGUI():
         bg_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
         bg_frame.pack(fill=tk.BOTH)
 
-
         bg_color_rgb = self.hex_to_rgb(self.bg_color)
         tk.Label(bg_frame, text=" BG Color ").grid(row=7,column=0)
 
@@ -224,6 +225,49 @@ class MazeGUI():
         bg_b.set(bg_color_rgb[2])
 
 
+        start_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
+        start_frame.pack(fill=tk.BOTH)
+
+        start_color_rgb = self.hex_to_rgb(self.start_color)
+        tk.Label(start_frame, text=" Start Color ").grid(row=10,column=0)
+
+        start_r = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
+             command=lambda x: self.update_colors(('start_r', start_r.get())))
+        start_r.grid(row=9, column=1)
+        start_r.set(start_color_rgb[0])
+
+        start_g = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
+            command=lambda x: self.update_colors(('start_g', start_g.get())))
+        start_g.grid(row=10, column=1)
+        start_g.set(start_color_rgb[1])
+
+        start_b = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
+            command=lambda x: self.update_colors(('start_b', start_b.get())))
+        start_b.grid(row=11, column=1)
+        start_b.set(start_color_rgb[2])
+
+
+        end_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
+        end_frame.pack(fill=tk.BOTH)
+
+        end_color_rgb = self.hex_to_rgb(self.end_color)
+        tk.Label(end_frame, text=" End Color ").grid(row=10,column=0)
+
+        end_r = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
+             command=lambda x: self.update_colors(('end_r', end_r.get())))
+        end_r.grid(row=9, column=1)
+        end_r.set(end_color_rgb[0])
+
+        end_g = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
+            command=lambda x: self.update_colors(('end_g', end_g.get())))
+        end_g.grid(row=10, column=1)
+        end_g.set(end_color_rgb[1])
+
+        end_b = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
+            command=lambda x: self.update_colors(('end_b', end_b.get())))
+        end_b.grid(row=11, column=1)
+        end_b.set(end_color_rgb[2])        
+
         button_frame = tk.Frame(win)
         button_frame.pack(fill=tk.BOTH)
 
@@ -234,9 +278,15 @@ class MazeGUI():
         cell_frame.update()
         bg_frame.update()
         button_frame.update()
+        start_frame.update()
 
         window_size_x = int(grid_frame.winfo_width() * 1.25)
-        window_size_y = grid_frame.winfo_height() + cell_frame.winfo_height() + bg_frame.winfo_height() + button_frame.winfo_height()
+        window_size_y = (grid_frame.winfo_height() + 
+                        cell_frame.winfo_height() + 
+                        bg_frame.winfo_height() + 
+                        button_frame.winfo_height() + 
+                        start_frame.winfo_height() +
+                        end_frame.winfo_height())
 
         window_pos_x = (self.screen_width - window_size_x) // 2
         window_pos_y = (self.screen_height - window_size_y) // 2
@@ -281,6 +331,28 @@ class MazeGUI():
                 new_color = self.rgb_to_hex(bg_color_rgb[0], bg_color_rgb[1], args[1])
             self.bg_color = new_color
             self.canvas.config(bg=self.bg_color)
+        if 'start' in args[0]:
+            new_color = self.start_color
+            start_color_rgb = self.hex_to_rgb(self.start_color)
+            if '_r' in args[0]:
+                new_color = self.rgb_to_hex(args[1], start_color_rgb[1], start_color_rgb[2])
+            if '_g' in args[0]:
+                new_color = self.rgb_to_hex(start_color_rgb[0], args[1], start_color_rgb[2])
+            if '_b' in args[0]:
+                new_color = self.rgb_to_hex(start_color_rgb[0], start_color_rgb[1], args[1])
+            self.start_color = new_color
+            self.canvas.itemconfig(self.Maze.start, fill=self.start_color)
+        if 'end' in args[0]:
+            new_color = self.end_color
+            end_color_rgb = self.hex_to_rgb(self.end_color)
+            if '_r' in args[0]:
+                new_color = self.rgb_to_hex(args[1], end_color_rgb[1], end_color_rgb[2])
+            if '_g' in args[0]:
+                new_color = self.rgb_to_hex(end_color_rgb[0], args[1], end_color_rgb[2])
+            if '_b' in args[0]:
+                new_color = self.rgb_to_hex(end_color_rgb[0], end_color_rgb[1], args[1])
+            self.end_color = new_color
+            self.canvas.itemconfig(self.Maze.end, fill=self.end_color)
 
     def save_settings(self, args):
         if args[0].title() == 'Edit Grid':
@@ -324,7 +396,7 @@ class MazeGUI():
 
             if not self.Maze.start == None:
                 self.canvas.delete(self.Maze.start)
-            start = self.canvas.create_oval(coords, fill='green')
+            start = self.canvas.create_oval(coords, fill=self.start_color)
             self.Maze.start = start
 
         elif self.mode == 'end':
@@ -335,7 +407,7 @@ class MazeGUI():
 
             if not self.Maze.end == None:
                 self.canvas.delete(self.Maze.end)
-            end = self.canvas.create_oval(coords, fill='red')
+            end = self.canvas.create_oval(coords, fill=self.end_color)
             self.Maze.end = end
 
 
