@@ -14,6 +14,57 @@ class Maze():
     def solve(self, algorithm):
         print(f'Solving through {algorithm}')
 
+class RGBSlider():
+    def __init__(self, parent, label, current_color):
+        self.parent = parent
+        self.frame = tk.Frame(self.parent, highlightbackground="black", highlightthickness=2)
+        self.frame.pack(fill=tk.BOTH)
+        self.current_color = current_color
+
+        color_rgb = self.hex_to_rgb(current_color)
+        tk.Label(self.frame, text=label).grid(row=1,column=0)
+
+        r = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(('r', r.get())))
+        r.grid(row=0, column=1)
+        r.set(color_rgb[0])
+
+        g = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(('g', g.get())))
+        g.grid(row=1, column=1)
+        g.set(color_rgb[1])
+
+        b = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(('b', b.get())))
+        b.grid(row=2, column=1)
+        b.set(color_rgb[2])
+
+
+    def get_color(self):
+        return self.current_color
+
+
+    def update_color(self, args):
+        current_rgb = self.hex_to_rgb(self.current_color)
+        new_color = self.current_color
+        if '_r' in args[0]:
+            new_color = self.rgb_to_hex(args[1], current_rgb[1], current_rgb[2])
+        if '_g' in args[0]:
+            new_color = self.rgb_to_hex(current_rgb[0], args[1], current_rgb[2])
+        if '_b' in args[0]:
+            new_color = self.rgb_to_hex(current_rgb[0], current_rgb[1], args[1])
+
+        self.current_color = new_color
+
+    def rgb_to_hex(self, r, g, b):
+        return '#%02x%02x%02x' % (r, g, b)
+
+    def hex_to_rgb(self, value):
+        print(value)
+        value = value.lstrip('#')
+        length = len(value)
+        return tuple(int(value[i:i+length//3], 16) for i in range(0, length, length//3))
+
 class MazeGUI():
     def __init__(self, parent):
         self.parent = parent
@@ -47,6 +98,12 @@ class MazeGUI():
         elif event.delta < 0:
             self.canvas.scale('all', event.x, event.y, 0.9, 0.9)
         self.canvas.scan_dragto(event.x, event.y, gain=1)
+    
+
+    def reset_zoom(self):
+        self.canvas.scan_dragto(0, 0, gain=1)
+        self.canvas.scale('all', 0, 0, 1, 1)
+
 
     def gui_setup(self, parent):
         self.canvas = tk.Canvas(parent, bg=self.bg_color)
@@ -73,7 +130,7 @@ class MazeGUI():
         self.edit_menu.add_cascade(label='Colors', menu=self.color_menu)
         self.color_menu.add_command(label='Customize', command=self.colors_popup)
         self.color_menu.add_command(label='Restore Default', command=None)
-        self.edit_menu.add_command(label='Reset Zoom', command=None)
+        self.edit_menu.add_command(label='Reset Zoom', command=self.reset_zoom)
 
         self.draw_menu = tk.Menu(self.edit_menu, tearoff=0)
         self.menubar.add_cascade(label='Draw', menu=self.draw_menu)
@@ -198,134 +255,34 @@ class MazeGUI():
         win.focus()
         win.bind('<FocusOut>', self.close)
 
-        grid_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
-        grid_frame.pack(fill=tk.BOTH)
-        
-        grid_color_rgb = self.hex_to_rgb(self.grid_color)
-        tk.Label(grid_frame, text=" Grid Color ").grid(row=1,column=0)
-
-        grid_r = tk.Scale(grid_frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_colors(('grid_r', grid_r.get())))
-        grid_r.grid(row=0, column=1)
-        grid_r.set(grid_color_rgb[0])
-
-        grid_g = tk.Scale(grid_frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_colors(('grid_g', grid_g.get())))
-        grid_g.grid(row=1, column=1)
-        grid_g.set(grid_color_rgb[1])
-
-        grid_b = tk.Scale(grid_frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_colors(('grid_b', grid_b.get())))
-        grid_b.grid(row=2, column=1)
-        grid_b.set(grid_color_rgb[2])
-
-
-        cell_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
-        cell_frame.pack(fill=tk.BOTH)
-
-        cell_color_rgb = self.hex_to_rgb(self.cell_color)
-        tk.Label(cell_frame, text=" Cell Color ").grid(row=4,column=0)
-
-        cell_r = tk.Scale(cell_frame, from_=0, to=255, orient='horizontal',
-             command=lambda x: self.update_colors(('cell_r', cell_r.get())))
-        cell_r.grid(row=3, column=1)
-        cell_r.set(cell_color_rgb[0])
-
-        cell_g = tk.Scale(cell_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('cell_g', cell_g.get())))
-        cell_g.grid(row=4, column=1)
-        cell_g.set(cell_color_rgb[1])
-
-        cell_b = tk.Scale(cell_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('cell_b', cell_b.get())))
-        cell_b.grid(row=5, column=1)
-        cell_b.set(cell_color_rgb[2])
-
-        
-        bg_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
-        bg_frame.pack(fill=tk.BOTH)
-
-        bg_color_rgb = self.hex_to_rgb(self.bg_color)
-        tk.Label(bg_frame, text=" BG Color ").grid(row=7,column=0)
-
-        bg_r = tk.Scale(bg_frame, from_=0, to=255, orient='horizontal',
-             command=lambda x: self.update_colors(('bg_r', bg_r.get())))
-        bg_r.grid(row=6, column=1)
-        bg_r.set(bg_color_rgb[0])
-
-        bg_g = tk.Scale(bg_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('bg_g', bg_g.get())))
-        bg_g.grid(row=7, column=1)
-        bg_g.set(bg_color_rgb[1])
-
-        bg_b = tk.Scale(bg_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('bg_b', bg_b.get())))
-        bg_b.grid(row=8, column=1)
-        bg_b.set(bg_color_rgb[2])
-
-
-        start_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
-        start_frame.pack(fill=tk.BOTH)
-
-        start_color_rgb = self.hex_to_rgb(self.start_color)
-        tk.Label(start_frame, text=" Start Color ").grid(row=10,column=0)
-
-        start_r = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
-             command=lambda x: self.update_colors(('start_r', start_r.get())))
-        start_r.grid(row=9, column=1)
-        start_r.set(start_color_rgb[0])
-
-        start_g = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('start_g', start_g.get())))
-        start_g.grid(row=10, column=1)
-        start_g.set(start_color_rgb[1])
-
-        start_b = tk.Scale(start_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('start_b', start_b.get())))
-        start_b.grid(row=11, column=1)
-        start_b.set(start_color_rgb[2])
-
-
-        end_frame = tk.Frame(win, highlightbackground="black", highlightthickness=2)
-        end_frame.pack(fill=tk.BOTH)
-
-        end_color_rgb = self.hex_to_rgb(self.end_color)
-        tk.Label(end_frame, text=" End Color ").grid(row=10,column=0)
-
-        end_r = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
-             command=lambda x: self.update_colors(('end_r', end_r.get())))
-        end_r.grid(row=9, column=1)
-        end_r.set(end_color_rgb[0])
-
-        end_g = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('end_g', end_g.get())))
-        end_g.grid(row=10, column=1)
-        end_g.set(end_color_rgb[1])
-
-        end_b = tk.Scale(end_frame, from_=0, to=255, orient='horizontal',
-            command=lambda x: self.update_colors(('end_b', end_b.get())))
-        end_b.grid(row=11, column=1)
-        end_b.set(end_color_rgb[2])        
+        grid = RGBSlider(win, 'Grid Color', self.grid_color)
+        cell = RGBSlider(win, 'Cell Color', self.cell_color)
+        bg = RGBSlider(win, 'BG Color', self.bg_color)
+        start = RGBSlider(win, 'Start Color', self.start_color)
+        end = RGBSlider(win, 'End Color', self.end_color)       
 
         button_frame = tk.Frame(win)
         button_frame.pack(fill=tk.BOTH)
 
+        save_button = tk.Button(button_frame, text="Save", command=win.destroy)
+        save_button.pack()
         close_button = tk.Button(button_frame, text="Close", command=win.destroy)
         close_button.pack()
 
-        grid_frame.update()
-        cell_frame.update()
-        bg_frame.update()
+        grid.frame.update()
+        cell.frame.update()
+        bg.frame.update()
         button_frame.update()
-        start_frame.update()
+        start.frame.update()
+        end.frame.update()
 
-        window_size_x = int(grid_frame.winfo_width() * 1.25)
-        window_size_y = (grid_frame.winfo_height() + 
-                        cell_frame.winfo_height() + 
-                        bg_frame.winfo_height() + 
+        window_size_x = int(grid.frame.winfo_width() * 1.25)
+        window_size_y = (grid.frame.winfo_height() + 
+                        cell.frame.winfo_height() + 
+                        bg.frame.winfo_height() + 
                         button_frame.winfo_height() + 
-                        start_frame.winfo_height() +
-                        end_frame.winfo_height())
+                        start.frame.winfo_height() +
+                        end.frame.winfo_height())
 
         window_pos_x = (self.screen_width - window_size_x) // 2
         window_pos_y = (self.screen_height - window_size_y) // 2
