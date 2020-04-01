@@ -97,24 +97,6 @@ class MazeGUI():
         self.size_setup()
         self.bind_events()
 
-    def move_start(self, event):
-        self.canvas.scan_mark(event.x, event.y)
-
-    def move_move(self, event):
-        self.canvas.scan_dragto(event.x, event.y, gain=1)
-
-    def zoom(self, event):
-        if event.delta > 0:
-            self.canvas.scale('all', self.canvas.canvasx(event.x), self.canvas.canvasy(event.y), 1.1, 1.1)
-        elif event.delta < 0:
-            self.canvas.scale('all', event.x, event.y, 0.9, 0.9)
-        self.canvas.scan_dragto(event.x, event.y, gain=1)
-    
-
-    def reset_zoom(self):
-        self.canvas.scan_dragto(0, 0, gain=1)
-        self.canvas.scale('all', 0, 0, 1, 1)
-
 
     def gui_setup(self, parent):
         self.canvas = tk.Canvas(parent, bg=self.bg_color)
@@ -141,7 +123,6 @@ class MazeGUI():
         self.edit_menu.add_cascade(label='Colors', menu=self.color_menu)
         self.color_menu.add_command(label='Customize', command=self.colors_popup)
         self.color_menu.add_command(label='Restore Default', command=None)
-        self.edit_menu.add_command(label='Reset Zoom', command=self.reset_zoom)
 
         self.draw_menu = tk.Menu(self.edit_menu, tearoff=0)
         self.menubar.add_cascade(label='Draw', menu=self.draw_menu)
@@ -214,9 +195,6 @@ class MazeGUI():
     def bind_events(self):
         for event in ['<Button 1>', '<B1-Motion>', '<Button 3>', '<B3-Motion>']:
             self.canvas.bind(event, self.mouse_event)
-        self.canvas.bind('<MouseWheel>', self.zoom)
-        self.canvas.bind('<Button 2>', self.move_start)
-        self.canvas.bind('<B2-Motion>', self.move_move)
 
 
     def close(self, event):
@@ -337,41 +315,45 @@ class MazeGUI():
     def mouse_event(self, event):
         start_x = event.x // self.cell_size * self.cell_size
         start_y = event.y // self.cell_size * self.cell_size
+        end_x = start_x + self.cell_size
+        end_y = start_y + self.cell_size
 
         mid_point = start_x + self.cell_size // 2, start_y + self.cell_size // 2
         radius = self.cell_size // 4
-
+            
+        coords = start_x, start_y, end_x, end_y
         if self.mode == 'walls':
-            coords = start_x, start_y, start_x + self.cell_size, start_y + self.cell_size
             if (event.num == 1 or 'Button1' in str(event)) and coords not in self.Maze.walls.keys():
-                if coords[0] >= 0 and coords[1] >= 0 and coords[2] <= self.window_size and coords[3] <= self.window_size: 
+                if len(self.canvas.find_enclosed(*coords)) == 0:
                     wall = self.canvas.create_rectangle(coords, fill=self.cell_color)
-                    self.canvas.tag_lower(wall)    
+                    self.canvas.tag_lower(wall)
                     self.Maze.walls[coords] = wall
 
             elif (event.num == 3 or 'Button3' in str(event)) and coords in self.Maze.walls.keys():
                 self.canvas.delete(self.Maze.walls.pop(coords))
         elif self.mode == 'start':
-            coords = (mid_point[0] - radius, 
-                    mid_point[1] - radius, 
-                    mid_point[0] + radius, 
-                    mid_point[1] + radius)
+            if not False in [self.canvas.type(item) == 'line' for item in self.canvas.find_overlapping(*coords)]:
+                coords = (mid_point[0] - radius, 
+                        mid_point[1] - radius, 
+                        mid_point[0] + radius, 
+                        mid_point[1] + radius)
 
-            if not self.Maze.start == None:
-                self.canvas.delete(self.Maze.start)
-            start = self.canvas.create_oval(coords, fill=self.start_color)
-            self.Maze.start = start
+                if not self.Maze.start == None:
+                    self.canvas.delete(self.Maze.start)
+                start = self.canvas.create_oval(coords, fill=self.start_color)
+                self.Maze.start = start
 
         elif self.mode == 'end':
-            coords = (mid_point[0] - radius, 
-                    mid_point[1] - radius, 
-                    mid_point[0] + radius, 
-                    mid_point[1] + radius)
+            if len(self.canvas.find_overlapping(*coords)) == 0:
+                coords = (mid_point[0] - radius, 
+                        mid_point[1] - radius, 
+                        mid_point[0] + radius, 
+                        mid_point[1] + radius)
 
-            if not self.Maze.end == None:
-                self.canvas.delete(self.Maze.end)
-            end = self.canvas.create_oval(coords, fill=self.end_color)
-            self.Maze.end = end
+                if not self.Maze.end == None:
+                    self.canvas.delete(self.Maze.end)
+                end = self.canvas.create_oval(coords, fill=self.end_color)
+                self.Maze.end = end
 
 
 
