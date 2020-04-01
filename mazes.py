@@ -22,45 +22,56 @@ class RGBSlider():
         self.current_color = current_color
 
         color_rgb = self.hex_to_rgb(current_color)
-        tk.Label(self.frame, text=label).grid(row=1,column=0)
+        
+        self.label = label
+        tk.Label(self.frame, text=label).grid(row=0,column=0)
+        self.color_preview = tk.Frame(self.frame)
+        self.color_preview.grid(row=1, rowspan=2, column=0)
 
-        r = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_color(('r', r.get())))
+        r = tk.Scale(self.frame, name='r', from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(r))
         r.grid(row=0, column=1)
         r.set(color_rgb[0])
 
-        g = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_color(('g', g.get())))
+        g = tk.Scale(self.frame, name='g', from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(g))
         g.grid(row=1, column=1)
         g.set(color_rgb[1])
 
-        b = tk.Scale(self.frame, from_=0, to=255, orient='horizontal', 
-            command=lambda x: self.update_color(('b', b.get())))
+        b = tk.Scale(self.frame, name='b', from_=0, to=255, orient='horizontal', 
+            command=lambda x: self.update_color(b))
         b.grid(row=2, column=1)
         b.set(color_rgb[2])
 
+        self.parent.update()
+        self.color_preview.config(background=self.current_color, width=self.frame.winfo_width()/3, height=self.frame.winfo_width()/3)
 
     def get_color(self):
         return self.current_color
 
+    def get_label(self):
+        return self.label
 
-    def update_color(self, args):
+
+    def update_color(self, scale):
         current_rgb = self.hex_to_rgb(self.current_color)
         new_color = self.current_color
-        if '_r' in args[0]:
-            new_color = self.rgb_to_hex(args[1], current_rgb[1], current_rgb[2])
-        if '_g' in args[0]:
-            new_color = self.rgb_to_hex(current_rgb[0], args[1], current_rgb[2])
-        if '_b' in args[0]:
-            new_color = self.rgb_to_hex(current_rgb[0], current_rgb[1], args[1])
+
+        if 'r' in str(scale):
+            new_color = self.rgb_to_hex(scale.get(), current_rgb[1], current_rgb[2])
+        if 'g' in str(scale):
+            new_color = self.rgb_to_hex(current_rgb[0], scale.get(), current_rgb[2])
+        if 'b' in str(scale):
+            new_color = self.rgb_to_hex(current_rgb[0], current_rgb[1], scale.get())
 
         self.current_color = new_color
+        self.color_preview.config(background=self.current_color)
+
 
     def rgb_to_hex(self, r, g, b):
         return '#%02x%02x%02x' % (r, g, b)
 
     def hex_to_rgb(self, value):
-        print(value)
         value = value.lstrip('#')
         length = len(value)
         return tuple(int(value[i:i+length//3], 16) for i in range(0, length, length//3))
@@ -264,17 +275,14 @@ class MazeGUI():
         button_frame = tk.Frame(win)
         button_frame.pack(fill=tk.BOTH)
 
-        save_button = tk.Button(button_frame, text="Save", command=win.destroy)
+        args = (win, grid, cell, bg, start, end)
+
+        save_button = tk.Button(button_frame, text="Save", command=lambda:self.save_settings(args))
         save_button.pack()
         close_button = tk.Button(button_frame, text="Close", command=win.destroy)
         close_button.pack()
 
-        grid.frame.update()
-        cell.frame.update()
-        bg.frame.update()
-        button_frame.update()
-        start.frame.update()
-        end.frame.update()
+        win.update()
 
         window_size_x = int(grid.frame.winfo_width() * 1.25)
         window_size_y = (grid.frame.winfo_height() + 
@@ -290,71 +298,30 @@ class MazeGUI():
         geometry = f'{window_size_x}x{window_size_y}+{window_pos_x}+{window_pos_y}'
         win.geometry(geometry)
 
-
-    def update_colors(self, args):
-        if 'grid' in args[0]:
-            new_color = self.grid_color
-            grid_color_rgb = self.hex_to_rgb(self.grid_color)
-            if '_r' in args[0]:
-                new_color = self.rgb_to_hex(args[1], grid_color_rgb[1], grid_color_rgb[2])
-            if '_g' in args[0]:
-                new_color = self.rgb_to_hex(grid_color_rgb[0], args[1], grid_color_rgb[2])
-            if '_b' in args[0]:
-                new_color = self.rgb_to_hex(grid_color_rgb[0], grid_color_rgb[1], args[1])
-            self.grid_color = new_color
-            self.clear_grid()
-            self.draw_grid()
-        if 'cell' in args[0]:
-            new_color = self.cell_color
-            cell_color_rgb = self.hex_to_rgb(self.cell_color)
-            if '_r' in args[0]:
-                new_color = self.rgb_to_hex(args[1], cell_color_rgb[1], cell_color_rgb[2])
-            if '_g' in args[0]:
-                new_color = self.rgb_to_hex(cell_color_rgb[0], args[1], cell_color_rgb[2])
-            if '_b' in args[0]:
-                new_color = self.rgb_to_hex(cell_color_rgb[0], cell_color_rgb[1], args[1])
-            self.cell_color = new_color
-            for key in self.Maze.walls.keys():
-                self.canvas.itemconfig(self.Maze.walls[key], fill=self.cell_color)
-        if 'bg' in args[0]:
-            new_color = self.bg_color
-            bg_color_rgb = self.hex_to_rgb(self.bg_color)
-            if '_r' in args[0]:
-                new_color = self.rgb_to_hex(args[1], bg_color_rgb[1], bg_color_rgb[2])
-            if '_g' in args[0]:
-                new_color = self.rgb_to_hex(bg_color_rgb[0], args[1], bg_color_rgb[2])
-            if '_b' in args[0]:
-                new_color = self.rgb_to_hex(bg_color_rgb[0], bg_color_rgb[1], args[1])
-            self.bg_color = new_color
-            self.canvas.config(bg=self.bg_color)
-        if 'start' in args[0]:
-            new_color = self.start_color
-            start_color_rgb = self.hex_to_rgb(self.start_color)
-            if '_r' in args[0]:
-                new_color = self.rgb_to_hex(args[1], start_color_rgb[1], start_color_rgb[2])
-            if '_g' in args[0]:
-                new_color = self.rgb_to_hex(start_color_rgb[0], args[1], start_color_rgb[2])
-            if '_b' in args[0]:
-                new_color = self.rgb_to_hex(start_color_rgb[0], start_color_rgb[1], args[1])
-            self.start_color = new_color
-            self.canvas.itemconfig(self.Maze.start, fill=self.start_color)
-        if 'end' in args[0]:
-            new_color = self.end_color
-            end_color_rgb = self.hex_to_rgb(self.end_color)
-            if '_r' in args[0]:
-                new_color = self.rgb_to_hex(args[1], end_color_rgb[1], end_color_rgb[2])
-            if '_g' in args[0]:
-                new_color = self.rgb_to_hex(end_color_rgb[0], args[1], end_color_rgb[2])
-            if '_b' in args[0]:
-                new_color = self.rgb_to_hex(end_color_rgb[0], end_color_rgb[1], args[1])
-            self.end_color = new_color
-            self.canvas.itemconfig(self.Maze.end, fill=self.end_color)
-
     def save_settings(self, args):
         if args[0].title() == 'Edit Grid':
             self.size_setup(args[1].get(), args[2].get())
         elif args[0].title() == 'Edit Colors':
-            pass
+            for item in args[1:]:
+                if item.get_label() == 'Grid Color':
+                    self.grid_color = item.get_color()
+                if item.get_label() == 'Cell Color':
+                    self.cell_color = item.get_color()
+                if item.get_label() == 'BG Color':
+                    self.bg_color = item.get_color()
+                if item.get_label() == 'Start Color':
+                    self.start_color = item.get_color()
+                if item.get_label() == 'End Color':
+                    self.end_color = item.get_color()
+                self.clear_grid()
+                self.draw_grid()
+                for wall in self.Maze.walls:
+                    self.canvas.itemconfig(self.Maze.walls[wall], fill=self.cell_color)
+                self.canvas.itemconfig(self.Maze.start, fill=self.start_color)    
+                self.canvas.itemconfig(self.Maze.end, fill=self.end_color)    
+                self.canvas.config(bg=self.bg_color)
+            self.parent.update()
+
         args[0].destroy()
 
 
