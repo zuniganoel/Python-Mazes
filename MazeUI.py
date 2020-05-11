@@ -229,13 +229,15 @@ class MazeGUI():
 
         win.update()
 
-        window_size_x = int(grid.frame.winfo_width() * 1.25)
-        window_size_y = (grid.frame.winfo_height() +
-                         cell.frame.winfo_height() +
-                         bg.frame.winfo_height() +
-                         button_frame.winfo_height() +
-                         start.frame.winfo_height() +
-                         end.frame.winfo_height())
+        # window_size_x = int(grid.frame.winfo_width() * 1.25)
+        window_size_x = 200
+        window_size_y = 700
+        # window_size_y = (grid.frame.winfo_height() +
+                         # cell.frame.winfo_height() +
+                         # bg.frame.winfo_height() +
+                         # button_frame.winfo_height() +
+                         # start.frame.winfo_height() +
+                         # end.frame.winfo_height())
 
         window_pos_x = (self.screen_width - window_size_x) // 2
         window_pos_y = (self.screen_height - window_size_y) // 2
